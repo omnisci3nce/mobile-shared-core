@@ -3,8 +3,52 @@
 #include <stdio.h>
 #include <string.h>
 
-char* select_all_users_query = "SELECT * from users;";
+char* select_all_users_query = "SELECT * from users LIMIT 10;";
 char* insert_user_query = "INSERT INTO users(name, enabled) VALUES (?, ?);";
+
+users_result get_users(int limit, int offset) {
+  sqlite3 *db;
+  sqlite3_stmt *res;
+
+  int rc = sqlite3_open("test.db", &db);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+    sqlite3_close(db);
+  }
+
+  rc = sqlite3_prepare_v2(db, select_all_users_query, -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
+    sqlite3_close(db);
+  }
+
+  users_result result;
+  // Allocate space for our results
+  result.users = malloc((sizeof(user_t)) * limit);
+
+  int i = 0;
+  while (i < limit) {
+    int step = sqlite3_step(res);
+    if (step == SQLITE_DONE) {
+      continue;
+    } else {
+      const char* name = sqlite3_column_text(res, 0);
+      char *copy = malloc(strlen(name) + 1);
+      strcpy(copy, name); // name will be automatically freed next sqlite3_step so we need to copy it out
+      result.users[i].name = copy;
+      result.users[i].enabled = sqlite3_column_int(res, 1);   
+      i++;
+    }
+  }
+
+  result.len = i;
+
+  // Cleanup
+  sqlite3_finalize(res);
+  sqlite3_close(db);
+
+  return result;
+}
 
 core_op_result create_user(char* name, bool enabled) {
   sqlite3 *db;
@@ -25,7 +69,7 @@ core_op_result create_user(char* name, bool enabled) {
 
   rc = sqlite3_prepare_v2(db, insert_user_query, -1, &res, 0);
   if (rc != SQLITE_OK) {
-    fprintf(stderr, "Failed to execute statement statement: %s\n", sqlite3_errmsg(db));
+    fprintf(stderr, "Failed to execute statement: %s\n", sqlite3_errmsg(db));
     sqlite3_close(db);
     return DBError;
   }

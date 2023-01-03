@@ -3,11 +3,18 @@
  * Author: Joshua Rowe
  */
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef struct user_t {
-  char* name;
+  const char* name;
   bool enabled;
 } user_t;
+
+typedef struct users_result {
+  int len;
+  user_t *users; 
+} users_result;
 
 typedef enum core_op_result {
   Success,
@@ -15,4 +22,6 @@ typedef enum core_op_result {
   DBError
 } core_op_result;
 
+
+users_result get_users(int limit, int offset);
 core_op_result create_user(char* name, bool enabled);
