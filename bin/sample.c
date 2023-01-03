@@ -1,6 +1,8 @@
 #include "../include/core.h"
 
 int main() {
+  init_table();
+
   create_user("Josh", true);
   create_user("Admin", false);
 

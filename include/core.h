@@ -23,5 +23,6 @@ typedef enum core_op_result {
 } core_op_result;
 
 
+int init_table();
 users_result get_users(int limit, int offset);
 core_op_result create_user(char* name, bool enabled);

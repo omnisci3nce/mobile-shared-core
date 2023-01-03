@@ -3,8 +3,34 @@
 #include <stdio.h>
 #include <string.h>
 
+char* create_table_query = "CREATE TABLE 'users' ('name'	TEXT, 'enabled'	INTEGER, PRIMARY KEY('name'))";
 char* select_all_users_query = "SELECT * from users LIMIT 10;";
 char* insert_user_query = "INSERT INTO users(name, enabled) VALUES (?, ?);";
+
+int init_table() {
+  sqlite3 *db;
+  char *err_msg;
+
+  int rc = sqlite3_open("test.db", &db);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+    sqlite3_close(db);
+    return 1;
+  }
+
+  rc = sqlite3_exec(db, create_table_query, 0, 0, &err_msg);
+
+  if (rc != SQLITE_OK ) {
+    fprintf(stderr, "SQL error: %s\n", err_msg);
+    sqlite3_free(err_msg);        
+    sqlite3_close(db);
+    return 1;
+  } 
+
+  sqlite3_close(db);
+  
+  return 0;
+}
 
 users_result get_users(int limit, int offset) {
   sqlite3 *db;
@@ -30,7 +56,7 @@ users_result get_users(int limit, int offset) {
   while (i < limit) {
     int step = sqlite3_step(res);
     if (step == SQLITE_DONE) {
-      continue;
+      break;
     } else {
       const char* name = sqlite3_column_text(res, 0);
       char *copy = malloc(strlen(name) + 1);
